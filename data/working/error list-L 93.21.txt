@@ -1,0 +1,21 @@
+Classification subject: autism There were 19 errors in 280 tests for an accuracy of  93.21 using a Large model
+         CLASS                     FILENAME      
+        Autistic               Autistic\042.jpg  
+        Autistic               Autistic\045.jpg  
+        Autistic               Autistic\068.jpg  
+        Autistic               Autistic\082.jpg  
+        Autistic               Autistic\087.jpg  
+        Autistic               Autistic\093.jpg  
+        Autistic               Autistic\097.jpg  
+        Autistic               Autistic\112.jpg  
+        Autistic               Autistic\114.jpg  
+        Autistic               Autistic\133.jpg  
+        Autistic               Autistic\134.jpg  
+      Non_Autistic           Non_Autistic\009.jpg
+      Non_Autistic           Non_Autistic\024.jpg
+      Non_Autistic           Non_Autistic\038.jpg
+      Non_Autistic           Non_Autistic\042.jpg
+      Non_Autistic           Non_Autistic\058.jpg
+      Non_Autistic           Non_Autistic\073.jpg
+      Non_Autistic           Non_Autistic\137.jpg
+      Non_Autistic           Non_Autistic\140.jpg

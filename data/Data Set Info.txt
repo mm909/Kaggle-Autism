@@ -1,0 +1,41 @@
+
+
+Greetings, I am Gerry Piosenka. I constructed this data set independently as I was not able to find an existing data set of Autistic
+children. I have tried to get help from various Autistic groups and the medical community without any luck. Primarily because I am
+not associated with a university or an established medical research group. I am simply a 75 year old retired techy working independently
+to try to develop an accurate means by which parents that suspect their child might be autistic could submit one or better yet several
+images of their child's face to an internet website and get a probability estimate with respect to the presence of Autism.
+This is NOT of course a clinical diagnosis. However if the result indicates a high probability of Autism it might spur the parent to
+seek a full clinical diagnosis. To prevent false alarms I believe the accuracy on a large test set should be at least
+above 95%. To date the best I have achieved is 93%. If the data set could be expanded I believe 95$ is achievable.
+There are a number of medical studies that have been conducted that show a clear correlation between facial features and Autism.
+These were primarily done using a rather archaic approach based on physical measurement and done on a very limited number of children. 
+Clearly an AI image classifier operating on a large and clinically verified data set is a much better solution and could be deployed
+via the internet as an effective zero cost screening tool that parents that suspect their child may be autistic could use.
+
+Information on the Data Set:
+The data set consists of 4 directories:
+the train directory consists of 2 subdirectories, Autistic and Non_Autistic, each containing 1327 image files in jpg format.
+these are the files used for training the network
+The test directory contains 2 subdirectories labelled as above each containing 140 image files used to evaluate the model accuracy.
+The valid directory is similarly structured and contains 80 files in each subdirectory.
+
+The above files can be used to train a model that inputs data from these three separate directories.
+
+The fourth directory, labelled consolidated consists of two subdirectories, Autistic and Non_Autistic. Each contains 1507 image files.
+It was created by merging the train, test and vaild files into  a single concatenated file. The first 1327 images are from the training
+images. The next 140 images are from the test images and the final 80 are from the validation images. This directory can be used to train
+models when the entire data set is read in then randomly subdivided into training, validation and test sets.
+
+Note: Images were collected via Goggle searches. Images of children with Autism were primarily collected from Autism based web sites. 
+Images of non-autistic children were just gathered as child images via Goggle searches. These are just random images of children.
+Since about 1.6% of children have Autism there may be some images included in the non-autistic directories were the child has Autism.
+However the number should be low enough not to effect the resulting accuracy. Also since thousands of images were downloaded it is
+possible there is some duplication of images between the training and test set. I tried as best I could to avoid this problem.
+All the images have been cropped so that to the maximum extent possible the child's face occupies the majority of the pixels in the image.
+
+If anyone using this data set finds additional clinically verified images of Autistic children please advise me of how I might obtain
+these and augment the data set. A larger data set would be beneficial for accuracy purposes.
+I can be contacted directly at gpiosenka@cox.net
+
+ 
