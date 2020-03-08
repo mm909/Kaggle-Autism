@@ -10,21 +10,12 @@ from tensorflow.keras.applications import imagenet_utils
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import Model, load_model, Sequential
-from tensorflow.keras.utils import to_categorical
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 import os
 
-# set ansi color values
-Cblu ='\33[34m'
-Cend='\33[0m'   # sets color back to default
-Cred='\033[91m'
-Cblk='\33[39m'
-Cgreen='\33[32m'
-Cyellow='\33[33m'
-
-def get_paths(source_dir,output_dir,subject):
+def get_paths(source_dir):
     test_path  = os.path.join(source_dir,'test')
     train_path = os.path.join(source_dir, 'train')
     valid_path = os.path.join(source_dir,'valid')
@@ -34,23 +25,21 @@ def get_paths(source_dir,output_dir,subject):
 def make_model(classes, lr_rate, height, width, model_size, rand_seed):
     size = len(classes)
 
-    #imports the mobilenet model and discards the last 1000 neuron layer.
     mobile = tf.keras.applications.mobilenet.MobileNet(include_top=True,
                                                        input_shape=(height,width,3),
                                                        pooling='avg', weights='imagenet',
                                                        alpha=1, depth_multiplier=1)
-    # print(mobile.summary())
 
     x = mobile.layers[-6].output
-    x = Dense(256, kernel_regularizer = regularizers.l2(l = 0.015), activation='relu')(x)
-    x = Dropout(rate=.5, seed=rand_seed)(x)
+    x = Dense(124, kernel_regularizer = regularizers.l2(l = 0.015), activation='relu')(x)
+    x = Dropout(rate=.4, seed=rand_seed)(x)
 
     predictions = Dense(size, activation='softmax')(x)
     model = Model(inputs=mobile.input, outputs=predictions)
     for layer in model.layers:
-        layer.trainable=False
-    for layer in model.layers[-41:]:
-        layer.trainable=True
+        layer.trainable = True
+    # for layer in model.layers[-80:]:
+    #     layer.trainable=True
 
 
     model.compile(Adam(lr=lr_rate), loss='categorical_crossentropy', metrics=['accuracy'])
@@ -114,9 +103,8 @@ def train(model, callbacks, train_gen, val_gen, epochs, start_epoch):
     hrs=int(duration/3600)
     mins=int((duration-hrs*3600)/60)
     secs= duration-hrs*3600-mins*60
-    msg='{0}Training took\n {1} hours {2} minutes and {3:6.2f} seconds {4}'
-    print(msg.format(Cblu,hrs, mins,secs,Cend))
-
+    msg='Training took\n {0} hours {1} minutes and {2:6.2f} seconds'
+    print(msg.format(hrs, mins,secs))
     return data
 
 def save_model(output_dir,subject, accuracy, height, width, model, weights):
@@ -135,8 +123,51 @@ def make_predictions(model, weights, test_gen, lr):
     print('Training has completed. Now loading test set to see how accurate the model is')
     results = pmodel.evaluate(test_gen, verbose=0)
     print('Model accuracy on Test Set is {0:7.2f} %'.format(results[1]* 100))
-    predictions = pmodel.predict_generator(test_gen, verbose=0)
+    predictions = pmodel.predict(test_gen, verbose=0)
     return predictions
+
+def tr_plot(tacc,vacc,tloss,vloss):
+    #Plot the training and validation data
+    Epoch_count=len(tloss)
+    Epochs=[]
+    for i in range (0,Epoch_count):
+        Epochs.append(i+1)
+    index_loss=np.argmin(vloss)#  this is the epoch with the lowest validation loss
+    val_lowest=vloss[index_loss]
+    index_acc=np.argmax(vacc)
+    val_highest=vacc[index_acc]
+    plt.style.use('fivethirtyeight')
+    sc_label='best epoch= '+ str(index_loss+1)
+    vc_label='best epoch= '+ str(index_acc + 1)
+    fig,axes=plt.subplots(nrows=1, ncols=2, figsize=(15,5))
+    axes[0].plot(Epochs,tloss, 'r', label='Training loss')
+    axes[0].plot(Epochs,vloss,'g',label='Validation loss' )
+    axes[0].scatter(index_loss+1,val_lowest, s=150, c= 'blue', label=sc_label)
+    axes[0].set_title('Training and Validation Loss')
+    axes[0].set_xlabel('Epochs')
+    axes[0].set_ylabel('Loss')
+    axes[0].legend()
+    axes[1].plot (Epochs,tacc,'r',label= 'Training Accuracy')
+    axes[1].plot (Epochs,vacc,'g',label= 'Validation Accuracy')
+    axes[1].scatter(index_acc+1,val_highest, s=150, c= 'blue', label=vc_label)
+    axes[1].set_title('Training and Validation Accuracy')
+    axes[1].set_xlabel('Epochs')
+    axes[1].set_ylabel('Accuracy')
+    axes[1].legend()
+    plt.tight_layout
+    #plt.style.use('fivethirtyeight')
+    plt.show()
+
+def display_pred(output_dir, pred, file_names, labels, subject, model_size,classes):
+    trials=len(labels)
+    errors=0
+    for i in range (0,trials):
+        p_class=pred[i].argmax()
+        if p_class != labels[i]: #if the predicted class is not the same as the test label it is an error
+            errors=errors + 1
+
+    accuracy=100*(trials-errors)/trials
+    return accuracy
 
 def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, batch_size=80,
                  lr_rate=.002, height=224, width=224, rand_seed=128, model_size='L'):
@@ -144,7 +175,7 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
     height=224
     width=224
     mode=mode.upper()
-    paths=get_paths(source_dir,output_dir,subject)
+    paths=get_paths(source_dir)
     gens=make_generators(paths, mode, batch_size, v_split, paths[3], height, width)
     model=make_model(paths[3],lr_rate, height, width, model_size, rand_seed)
 
@@ -167,29 +198,20 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
             acc=logs.get('accuracy')
             if tr.best_acc > .9:
                 if tr.focus=='acc':
-                    msg='{0}\n with training accuracy= {1:7.4f} will now start adjusting learning rate based on validation loss\n{2}'
-                    print(msg.format(Cblu, tr.best_acc, Cend))
                     tr.focus='val'
             else:
                 if tr.best_acc<acc:
-                    #accuracy at batch end is better then highest accuracy thus far
-                    #msg='\non batch {0} accuracy improved from {1:7.4f}  to {2:7.4f} \n'
-                   # print(msg.format(batch + 1, tr.best_acc, acc ))
                     tr.best_acc=acc
                     tr.p_count=0
                     tr.best_weights=model.get_weights()
 
                 else:
-                    #accuracy on current batch was below highest accuracy thus far
                     tr.p_count=tr.p_count + 1
-                    #msg='\n for batch {0} current accuracy {1:7.4f}  was below highest accuracy of {2:7.4f} for {3} batches'
-                    #print(msg.format(batch + 1, acc, tr.best_acc,tr.p_count))
                     if tr.p_count >= tr.patience:
                         tr.p_count=0
                         lr=float(tf.keras.backend.get_value(self.model.optimizer.lr))
-                        new_lr=lr*.95
+                        new_lr=lr*.99
                         tf.keras.backend.set_value(self.model.optimizer.lr, new_lr)
-                        print('\n adjusted learning rate for batch {0} to {1}\n'.format(batch + 1, new_lr))
 
     # Dynamic learning rate for epoches (Validaion)
     class val(tf.keras.callbacks.Callback):
@@ -208,8 +230,6 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
             v_acc=logs.get('val_accuracy')
 
             if v_loss<val.best_loss:
-                msg='{0}\nfor epoch {1} validation loss improved,saving weights with validation loss= {2:7.4f}\n{3}'
-                print(msg.format(Cgreen,epoch + 1, v_loss, Cend))
                 val.best_loss=v_loss
                 val.best_weights=model.get_weights()
             else:
@@ -218,13 +238,10 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
                         lr=float(tf.keras.backend.get_value(self.model.optimizer.lr))
                         new_lr=lr * .7
                         tf.keras.backend.set_value(model.optimizer.lr, new_lr)
-                        msg='{0}\n for epoch {1} current loss {2:7.4f} exceeds best boss of {3:7.4f} reducing lr to {4:11.9f}{5}'
-                        print(msg.format(Cyellow,epoch + 1, v_loss, val.best_loss, new_lr,Cend))
             val.lr=float(tf.keras.backend.get_value(model.optimizer.lr))
 
     callbacks=[tr(), val()]
     run_num=0
-    run=True
     tacc=[]
     tloss=[]
     vacc=[]
@@ -247,17 +264,21 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
     for d in vloss_new:
         vloss.append(d)
 
+    tr_plot(tacc,vacc,tloss,vloss) # plot the data on loss and accuracy
     last_epoch=results.epoch[len(results.epoch)-1] # this is the last epoch run
     bestw=val.best_weights  # these are the saved weights with the lowest validation loss
     lr_rate=val.lr
     predictions=make_predictions(model, bestw, gens[1], lr_rate)
+    accuracy=display_pred(output_dir, predictions, gens[3], gens[4], subject, model_size, paths[3])
+    save_model(output_dir, subject, accuracy, height, width , model, bestw)
+
 
 source_dir='data\\'
 output_dir='data\\working\\'
 subject='autism'
 v_split=8
-epochs=10
-batch_size=80
+epochs=20
+batch_size=16
 lr_rate=.0015
 height=224
 width=224
