@@ -177,7 +177,7 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
     mode=mode.upper()
     paths=get_paths(source_dir)
     gens=make_generators(paths, mode, batch_size, v_split, paths[3], height, width)
-    model=make_model(paths[3],lr_rate, height, width, model_size, rand_seed)
+    model=make_model(paths[3], lr_rate, height, width, model_size, rand_seed)
 
     # Dynamic learning rate for batches
     class tr(tf.keras.callbacks.Callback):

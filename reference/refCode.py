@@ -22,3 +22,5 @@ my_image = image.load_img(carambola1,target_size=image_shape)
 my_image = image.img_to_array(my_image)
 my_image = np.expand_dims(my_image, axis=0)
 model.predict(my_image)
+
+https://towardsdatascience.com/convolutional-neural-network-17fb77e76c05
