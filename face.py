@@ -14,6 +14,7 @@ BatchSize = 32
 Height = 224
 Width = 224
 lr_rate=.0015
+# lr_rate=.01
 
 
 def SaveModelImage(Model, Title):
@@ -31,10 +32,10 @@ def MakeModel(dlsize):
     x = keras.layers.Flatten(name='flatten')(last_layer)
     # x = keras.layers.Dense(4096,activation='relu', name='fc1')(x)
     # x = keras.layers.Dense(256,activation='relu', name='fc1')(x)
-    x = keras.layers.Dense(256,activation='relu', name='fc2')(x)
-    x = keras.layers.Dense(124,activation='relu', name='fc3')(x)
+    # x = keras.layers.Dense(256,activation='relu', name='fc2')(x)
+    x = keras.layers.Dense(128, kernel_regularizer = keras.regularizers.l2(l = 0.015), activation='relu')(x)
     # x = keras.layers.Dense(64,activation='relu', name='fc4')(x)
-    # x = keras.layers.Dropout(rate=.4)(x)
+    x=keras.layers.Dropout(rate=.4, seed=42)(x)
     out = keras.layers.Dense(2, activation='softmax', name='classifier')(x)
     DerivedModel = keras.Model(BaseModel.input, out)
 
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     SaveModelImage(model, "models/h5/" + str(timestr) + "/" + "Graph.png")
     copyfile('face.py', "models/h5/" + str(timestr) + "/face.py")
     checkpoint = keras.callbacks.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-    reduce_lr = keras.callbacks.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.9, patience=3, min_lr=0.00001)
+    reduce_lr = keras.callbacks.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.7, patience=2, min_lr=0.00001)
     ModelCallbacks = keras.callbacks.callbacks.LambdaCallback(
                             on_epoch_begin=onEpochBegin,
                             on_epoch_end=None,
@@ -115,7 +116,7 @@ if __name__ == "__main__":
                             on_train_begin=None,
                             on_train_end=None)
 
-    first = 40
+    first = 100
     data = model.fit_generator(
            generator = TrainGen,
            validation_data= ValidGen,
