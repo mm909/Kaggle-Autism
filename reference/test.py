@@ -273,8 +273,8 @@ def TF2_classify(source_dir, output_dir, mode, subject, v_split=5, epochs=20, ba
     save_model(output_dir, subject, accuracy, height, width , model, bestw)
 
 
-source_dir='data\\'
-output_dir='data\\working\\'
+source_dir='..\\data\\'
+output_dir='..\\data\\working\\'
 subject='autism'
 v_split=8
 epochs=20
