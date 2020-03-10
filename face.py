@@ -1,6 +1,7 @@
 import keras
 from keras_vggface.vggface import VGGFace
 from keras_vggface.utils import preprocess_input
+from matplotlib import pyplot as plt
 from PIL import Image
 import glob
 import time
@@ -24,15 +25,16 @@ def Summary(Model):
     return
 
 def MakeModel(dlsize):
-    BaseModel = VGGFace(model='senet50', include_top=False, input_shape=(Height, Width, 3), pooling='avg')
+    BaseModel = VGGFace(model='resnet50', include_top=False, input_shape=(Height, Width, 3), pooling='avg')
     last_layer = BaseModel.get_layer('avg_pool').output
 
     x = keras.layers.Flatten(name='flatten')(last_layer)
     # x = keras.layers.Dense(4096,activation='relu', name='fc1')(x)
-    x = keras.layers.Dense(2048,activation='relu', name='fc1')(x)
-    x = keras.layers.Dense(1024,activation='relu', name='fc2')(x)
-    x = keras.layers.Dense(512,activation='relu', name='fc3')(x)
-    # x = Dropout(rate=.4, seed=rand_seed)(x)
+    # x = keras.layers.Dense(256,activation='relu', name='fc1')(x)
+    x = keras.layers.Dense(256,activation='relu', name='fc2')(x)
+    x = keras.layers.Dense(124,activation='relu', name='fc3')(x)
+    # x = keras.layers.Dense(64,activation='relu', name='fc4')(x)
+    # x = keras.layers.Dropout(rate=.4)(x)
     out = keras.layers.Dense(2, activation='softmax', name='classifier')(x)
     DerivedModel = keras.Model(BaseModel.input, out)
 
@@ -52,7 +54,7 @@ def MakeModel(dlsize):
     return DerivedModel
 
 def preprocess_input_new(x):
-    img = preprocess_input(keras.preprocessing.image.img_to_array(x))
+    img = preprocess_input(keras.preprocessing.image.img_to_array(x), version = 2)
     return keras.preprocessing.image.array_to_img(img)
 
 def onEpochBegin(epoch, logs):
@@ -74,8 +76,8 @@ if __name__ == "__main__":
             rotation_range=20,
             zoom_range=0.05,
             shear_range=0.05,
-            width_shift_range=.2,
-            height_shift_range=.2,
+            width_shift_range=.01,
+            height_shift_range=.01,
             samplewise_std_normalization=True).flow_from_directory(
             TrainPath,
             target_size=(Height, Width),
@@ -101,8 +103,10 @@ if __name__ == "__main__":
 
     os.makedirs("models/h5/" + str(timestr), exist_ok=True)
     filepath = "models/h5/" + str(timestr) + "/" + "weights-improvement-{epoch:02d}-{val_accuracy:.4f}.hdf5"
+    SaveModelImage(model, "models/h5/" + str(timestr) + "/" + "Graph.png")
+    copyfile('face.py', "models/h5/" + str(timestr) + "/face.py")
     checkpoint = keras.callbacks.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-    reduce_lr = keras.callbacks.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=5, min_lr=0.001)
+    reduce_lr = keras.callbacks.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.9, patience=3, min_lr=0.00001)
     ModelCallbacks = keras.callbacks.callbacks.LambdaCallback(
                             on_epoch_begin=onEpochBegin,
                             on_epoch_end=None,
@@ -119,7 +123,23 @@ if __name__ == "__main__":
            callbacks=[ModelCallbacks, reduce_lr, checkpoint],
            verbose=1)
 
-    model.save("models/h5/" + str(timestr) + "/" + str(round(data.history['val_accuracy'][-1],4)*100) + '.h5')
+    # Plot training & validation accuracy values
+    plt.plot(data.history['accuracy'])
+    plt.plot(data.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig("models/h5/" + str(timestr) + "/" + 'accuracy.png')
+
+    # Plot training & validation loss values
+    plt.plot(data.history['loss'])
+    plt.plot(data.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig("models/h5/" + str(timestr) + "/" + 'loss.png')
 
     path = 'D:/Kaggle-Autism/models/h5/'
     folders = [f for f in listdir(path) if join(path, f)]
@@ -127,8 +147,6 @@ if __name__ == "__main__":
     files = [f for f in listdir(path) if join(path, f)]
     files.pop()
     for file in files:
-        if os.path.isfile(path +file): # this makes the code more robust
-            os.remove(path+file)
-
-    SaveModelImage(model, "models/h5/" + str(timestr) + "/" + "Graph.png")
-    copyfile('face.py', "models/h5/" + str(timestr) + "/face.py")
+        print(os.path.splitext(file)[1])
+        if os.path.isfile(path + file) and os.path.splitext(file)[1] == '.hdf5':
+            os.remove(path + file)

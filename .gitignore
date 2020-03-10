@@ -3,3 +3,4 @@
 *.png
 *.h5
 *.hdf5
+models/*

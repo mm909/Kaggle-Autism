@@ -12,7 +12,7 @@ def file_hash(filepath):
 import os
 os.getcwd()
 
-os.chdir('D:/Kaggle-Autism/data/consolidated/Autistic')
+os.chdir('D:/Kaggle-Autism/cleanData/images/Non_Autistic')
 os.getcwd()
 
 file_list = os.listdir()
