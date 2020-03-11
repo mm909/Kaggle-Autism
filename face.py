@@ -1,21 +1,19 @@
-import keras
-from keras_vggface.vggface import VGGFace
-from keras_vggface.utils import preprocess_input
-from matplotlib import pyplot as plt
-from PIL import Image
+import os
 import glob
 import time
-from shutil import copyfile
-import os
+import keras
+from PIL import Image
 from os import listdir
+from shutil import copyfile
 from os.path import isfile, join
+from matplotlib import pyplot as plt
+from keras_vggface.vggface import VGGFace
+from keras_vggface.utils import preprocess_input
 
-BatchSize = 32
 Height = 224
-Width = 224
+Width  = 224
+BatchSize = 32
 lr_rate=.0015
-# lr_rate=.01
-
 
 def SaveModelImage(Model, Title):
     keras.utils.vis_utils.plot_model(Model, to_file=Title, show_shapes=True, show_layer_names=True)
@@ -33,9 +31,9 @@ def MakeModel(dlsize):
     # x = keras.layers.Dense(4096,activation='relu', name='fc1')(x)
     # x = keras.layers.Dense(256,activation='relu', name='fc1')(x)
     # x = keras.layers.Dense(256,activation='relu', name='fc2')(x)
-    x = keras.layers.Dense(128, kernel_regularizer = keras.regularizers.l2(l = 0.015), activation='relu')(x)
+    x = keras.layers.Dense(128, activation='relu')(x)
     # x = keras.layers.Dense(64,activation='relu', name='fc4')(x)
-    x=keras.layers.Dropout(rate=.4, seed=42)(x)
+    x=keras.layers.Dropout(rate=.3, seed=42)(x)
     out = keras.layers.Dense(2, activation='softmax', name='classifier')(x)
     DerivedModel = keras.Model(BaseModel.input, out)
 
@@ -73,30 +71,22 @@ if __name__ == "__main__":
     TrainGen = keras.preprocessing.image.ImageDataGenerator(
             preprocessing_function=preprocess_input_new,
             horizontal_flip=True,
-            samplewise_center=True,
-            rotation_range=20,
-            zoom_range=0.05,
-            shear_range=0.05,
+            rotation_range=45,
             width_shift_range=.01,
-            height_shift_range=.01,
-            samplewise_std_normalization=True).flow_from_directory(
+            height_shift_range=.01).flow_from_directory(
             TrainPath,
             target_size=(Height, Width),
             batch_size=BatchSize)
 
     ValidGen = keras.preprocessing.image.ImageDataGenerator(
-            preprocessing_function=preprocess_input_new,
-            samplewise_center=True,
-            samplewise_std_normalization=True).flow_from_directory(
+            preprocessing_function=preprocess_input_new).flow_from_directory(
             ValidPath,
             target_size=(Height, Width),
             batch_size=BatchSize,
             shuffle=False)
 
     TestGen = keras.preprocessing.image.ImageDataGenerator(
-            preprocessing_function=preprocess_input_new,
-            samplewise_center=True,
-            samplewise_std_normalization=True).flow_from_directory(
+            preprocessing_function=preprocess_input_new).flow_from_directory(
             TestPath,
             target_size=(Height, Width),
             batch_size=BatchSize,
