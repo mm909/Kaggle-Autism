@@ -181,7 +181,7 @@ if __name__ == "__main__":
                             on_train_end=None)
 
 
-    first = 100
+    first = 5
     if not load_model:
         # data = model.fit_generator(
         #        generator = TrainGen,
@@ -193,7 +193,7 @@ if __name__ == "__main__":
         args = [{'generator':TrainGen,
                  'validation_data':TestGen,
                  'epochs':first,
-                 'callbacks':[ModelCallbacks, reduce_lr],
+                 'callbacks':[ModelCallbacks, reduce_lr, EarlyStoppingAtMinLoss()],
                  'verbose':1}]
 
         ml = MLEXPS()
