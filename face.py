@@ -55,15 +55,30 @@ def MakeModel(dlsize):
     last_layer = BaseModel.get_layer('avg_pool').output
 
     x = keras.layers.Flatten(name='flatten')(last_layer)
+
     x = keras.layers.Dense(128, kernel_regularizer = keras.regularizers.l2(l = 0.015), activation='relu')(x)
     x = keras.layers.Dropout(rate=.4, seed=42)(x)
+
     out = keras.layers.Dense(2, activation='softmax', name='classifier')(x)
     DerivedModel = keras.Model(BaseModel.input, out)
 
+    # # Everything is trainingable
+    # # Weights are used at init
+    # for layer in DerivedModel.layers:
+    #     layer.trainable = True
+    #
+    #
+    # # Everything in the base model is frozen
+    # # Only top layers are trainable
+    # for layer in BaseModel.layers:
+    #     layer.trainable = False
+
+    # base
     for layer in DerivedModel.layers:
         layer.trainable = False
     for layer in DerivedModel.layers[-trainableCount:]:
         layer.trainable = True
+
 
     DerivedModel.compile(keras.optimizers.Adam(lr=lr_rate), loss='categorical_crossentropy', metrics=['accuracy'])
     return DerivedModel
@@ -178,7 +193,7 @@ if __name__ == "__main__":
         args = [{'generator':TrainGen,
                  'validation_data':TestGen,
                  'epochs':first,
-                 'callbacks':[ModelCallbacks, reduce_lr, EarlyStoppingAtMinLoss()],
+                 'callbacks':[ModelCallbacks, reduce_lr],
                  'verbose':1}]
 
         ml = MLEXPS()
